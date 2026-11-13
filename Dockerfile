@@ -5,7 +5,8 @@ COPY go.mod go.sum ./
 RUN go mod download
 COPY main.go ./
 COPY pkg ./pkg
-RUN go test ./pkg/...
+# The tests use SQLite, which needs cgo; the shipped binary is built without it.
+RUN apk add --no-cache build-base && CGO_ENABLED=1 go test ./pkg/...
 RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/secretmessage .
 
 FROM alpine:3.22
