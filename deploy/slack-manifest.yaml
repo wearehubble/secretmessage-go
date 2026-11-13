@@ -21,7 +21,6 @@ oauth_config:
     bot:
       - chat:write
       - commands
-      - workflow.steps:execute
 settings:
   interactivity:
     is_enabled: true
