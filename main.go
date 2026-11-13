@@ -87,6 +87,7 @@ func main() {
 		DatabaseURL:    configMap[databaseURL],
 		ShutdownNotice: os.Getenv("SHUTDOWN_NOTICE"),
 		SurveyLink:     os.Getenv("SURVEY_LINK"),
+		OauthResultURL: os.Getenv("OAUTH_RESULT_URL"),
 		OauthConfig: &oauth2.Config{
 			ClientID:     configMap[slackClientIDConfigKey],
 			ClientSecret: configMap[slackClientSecretConfigKey],

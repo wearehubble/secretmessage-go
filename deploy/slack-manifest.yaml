@@ -1,0 +1,31 @@
+# Slack app for Hubble's own workspace. Create it at https://api.slack.com/apps?new_app=1
+# ("From a manifest"). Not distributed, so it can only be installed in the workspace it is created in.
+display_information:
+  name: Secret Message
+  description: Sends self-destructing secret messages
+  background_color: "#333333"
+features:
+  bot_user:
+    display_name: Secret Message
+    always_online: true
+  slash_commands:
+    - command: /secret
+      url: https://secretmessage.hubblelab.dk/slash
+      description: Sends a self destructing secret message
+      usage_hint: the password is hunter2
+      should_escape: false
+oauth_config:
+  redirect_urls:
+    - https://secretmessage.hubblelab.dk/auth/slack/callback
+  scopes:
+    bot:
+      - chat:write
+      - commands
+      - workflow.steps:execute
+settings:
+  interactivity:
+    is_enabled: true
+    request_url: https://secretmessage.hubblelab.dk/interactive
+  org_deploy_enabled: false
+  socket_mode_enabled: false
+  token_rotation_enabled: false

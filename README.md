@@ -1,3 +1,19 @@
+# Hubble self-hosted fork
+
+This fork runs Secret Message for Hubble's own Slack workspace at `secretmessage.hubblelab.dk`,
+because the hosted service shuts down after 31 December 2026.
+
+- `Dockerfile` builds the app (and runs the tests).
+- `deploy/compose.yml` is the Portainer stack on drop: the app and PostgreSQL.
+- `deploy/build-on-drop.sh` builds the committed code on drop and restarts the stack.
+- `deploy/slack-manifest.yaml` is the Slack app.
+- Changes to the code: tracing is only exported when an OTLP endpoint is set, and the OAuth
+  flow ends on the instance's own `/success` and `/error` when `OAUTH_RESULT_URL` is set.
+
+The upstream README follows.
+
+---
+
 # ⚠️ SHUTDOWN NOTICE ⚠️
 
 > # **IMPORTANT: HOSTED SERVICE SHUTDOWN & REPOSITORY ARCHIVAL**

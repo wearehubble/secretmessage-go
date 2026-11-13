@@ -14,4 +14,5 @@ type Config struct {
 	DatabaseURL             string
 	ShutdownNotice          string
 	SurveyLink              string
+	OauthResultURL          string
 }

@@ -1,0 +1,53 @@
+# Portainer stack "secretmessage" on drop. The image is built on drop by deploy/build-on-drop.sh
+# (no registry needed). Slack reaches it through Caddy (secretmessage.hubblelab.dk ->
+# secretmessage:8080); no published host port. PostgreSQL is only on the internal backend network.
+# Set these stack environment variables in Portainer (values in 1Password):
+#   SLACK_SIGNING_SECRET, SLACK_CLIENT_ID, SLACK_CLIENT_SECRET, POSTGRES_PASSWORD
+# POSTGRES_PASSWORD goes into a URL, so use only letters and digits.
+services:
+  secretmessage:
+    image: secretmessage:latest
+    pull_policy: never
+    container_name: secretmessage
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      APP_URL: https://secretmessage.hubblelab.dk
+      SLACK_CALLBACK_URL: https://secretmessage.hubblelab.dk/auth/slack/callback
+      OAUTH_RESULT_URL: https://secretmessage.hubblelab.dk
+      SLACK_SIGNING_SECRET: ${SLACK_SIGNING_SECRET}
+      SLACK_CLIENT_ID: ${SLACK_CLIENT_ID}
+      SLACK_CLIENT_SECRET: ${SLACK_CLIENT_SECRET}
+      DATABASE_URL: postgres://secretmessage:${POSTGRES_PASSWORD}@secretmessage-postgres:5432/secretmessage?sslmode=disable
+    networks:
+      - web
+      - backend
+
+  postgres:
+    image: postgres:17-alpine
+    container_name: secretmessage-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: secretmessage
+      POSTGRES_DB: secretmessage
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U secretmessage -d secretmessage"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - backend
+
+volumes:
+  pgdata:
+
+networks:
+  web:
+    external: true
+  backend:
+    internal: true

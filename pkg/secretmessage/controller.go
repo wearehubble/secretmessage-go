@@ -70,6 +70,8 @@ func (ctl *PublicController) ConfigureRoutes() *gin.Engine {
 
 	r.GET("/auth/slack", ctl.HandleOauthBegin)
 	r.GET("/auth/slack/callback", ctl.HandleOauthCallback)
+	r.GET("/success", ctl.HandleOauthResult("Secret Message is installed. You can close this window and use /secret in Slack."))
+	r.GET("/error", ctl.HandleOauthResult("Secret Message could not be installed. Check the server log and try again."))
 
 	// Signature validation required
 	r.POST("/slash", ctl.ValidateSignature(), ctl.HandleSlash)

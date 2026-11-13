@@ -3,6 +3,7 @@ package secretmessage
 import (
 	"database/sql"
 	"encoding/json"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -16,18 +17,18 @@ func (ctl *PublicController) HandleOauthCallback(c *gin.Context) {
 	stateCookie, err := c.Cookie("state")
 	if err != nil {
 		ctl.logger.Error("error retrieving state cookie from request", zap.Error(err), zap.String("stateQuery", stateQuery))
-		c.Redirect(302, "https://secretmessage.xyz/error")
+		c.Redirect(302, ctl.oauthResultURL("error"))
 		return
 	}
 	if stateCookie != stateQuery {
 		ctl.logger.Error("error validating state cookie with state query param", zap.String("stateCookie", stateCookie), zap.String("stateQuery", stateQuery))
-		c.Redirect(302, "https://secretmessage.xyz/error")
+		c.Redirect(302, ctl.oauthResultURL("error"))
 		return
 	}
 	token, err := ctl.config.OauthConfig.Exchange(context.Background(), c.Query("code"))
 	if err != nil {
 		ctl.logger.Error("error retrieving initial oauth token", zap.Error(err))
-		c.Redirect(302, "https://secretmessage.xyz/error")
+		c.Redirect(302, ctl.oauthResultURL("error"))
 		return
 	}
 	r := token.Extra("raw")
@@ -37,28 +38,28 @@ func (ctl *PublicController) HandleOauthCallback(c *gin.Context) {
 	teamMap, ok := token.Extra("team").(map[string]interface{})
 	if !ok {
 		ctl.logger.Error("error unmarshalling team from token", zap.Any("token", token))
-		c.Redirect(302, "https://secretmessage.xyz/error")
+		c.Redirect(302, ctl.oauthResultURL("error"))
 		return
 	}
 
 	teamID, ok := teamMap["id"].(string)
 	if !ok || teamID == "" {
 		ctl.logger.Error("error unmarshalling teamID from token", zap.Any("token", token))
-		c.Redirect(302, "https://secretmessage.xyz/error")
+		c.Redirect(302, ctl.oauthResultURL("error"))
 		return
 	}
 
 	teamName, ok := teamMap["name"].(string)
 	if !ok || teamName == "" {
 		ctl.logger.Error("error unmarshalling teamName from token", zap.Any("token", token))
-		c.Redirect(302, "https://secretmessage.xyz/error")
+		c.Redirect(302, ctl.oauthResultURL("error"))
 		return
 	}
 
 	scope, ok := token.Extra("scope").(string)
 	if !ok || scope == "" {
 		ctl.logger.Error("error unmarshalling scope from token", zap.Any("token", token))
-		c.Redirect(302, "https://secretmessage.xyz/error")
+		c.Redirect(302, ctl.oauthResultURL("error"))
 		return
 	}
 
@@ -72,9 +73,26 @@ func (ctl *PublicController) HandleOauthCallback(c *gin.Context) {
 
 	if updateTeamErr != nil {
 		ctl.logger.Error("error updating team in db", zap.Error(updateTeamErr))
-		c.Redirect(302, "https://secretmessage.xyz/error")
+		c.Redirect(302, ctl.oauthResultURL("error"))
 		return
 	}
 
-	c.Redirect(302, "https://secretmessage.xyz/success")
+	c.Redirect(302, ctl.oauthResultURL("success"))
+}
+
+// oauthResultURL is where the browser lands after the install flow. It defaults to the
+// original hosted site; a self-hosted instance sets Config.OauthResultURL (OAUTH_RESULT_URL),
+// typically to its own APP_URL, which serves /success and /error itself.
+func (ctl *PublicController) oauthResultURL(result string) string {
+	base := strings.TrimRight(ctl.config.OauthResultURL, "/")
+	if base == "" {
+		base = "https://secretmessage.xyz"
+	}
+	return base + "/" + result
+}
+
+func (ctl *PublicController) HandleOauthResult(message string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.String(200, message)
+	}
 }
